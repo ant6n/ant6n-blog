@@ -14,7 +14,8 @@ of complete programs in order to record the use of every single
 instruction that it uses. I knew that GDB (the Gnu Debugger) allows
 stepping through a program instruction by instruction, and a little
 exploration reveals that the easiest way to script/automate it is to
-use the Linux functionality upon which GDB is built: `ptrace`.
+use the Linux functionality upon which GDB is built:
+[ptrace](http://man7.org/linux/man-pages/man2/ptrace.2.html).
 
 Stepping through a program using ptrace
 ---------------------------------------
@@ -33,8 +34,9 @@ allows it to take control of the process.
 
 Meanwhile, the debugger must wait for the child to suspend
 execution. It can then use Linux' `ptrace` functions to observe the
-debuggee or tell it to continue executing, either normally, until the
-next syscall, or for a single machine instruction.
+debuggee or tell it to continue executing, either normally
+(`PTRACE_CONT`), until the next syscall (`PTRACE_SYSCALL`), or for a
+single machine instruction (`PTRACE_SINGLESTEP`).
 
 It kind of looks like this:
 
