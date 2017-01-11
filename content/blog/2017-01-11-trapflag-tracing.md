@@ -37,7 +37,7 @@ next syscall, or for a single machine instruction.
 
 It kind of looks like this:
 
-<img style="width: 80%; display:block; margin-left:auto; margin-right: auto" src="{filename}/images/trap-trace/adjusted-ptrace-flow.png">
+<img style="width: 80%; display:block; margin-left:auto; margin-right: auto" src="{filename}/images/trap-trace/ptrace-flow.jpg">
 
 This functionality is what GDB is built on, and it's also what
 [strace](https://jvns.ca/blog/2015/04/14/strace-zine/) uses, by
@@ -186,7 +186,7 @@ execution of every single instruction.
 
 The execution of our program would look something like this:
 
-<img style="width: 80%; display:block; margin-left:auto; margin-right: auto" src="{filename}/images/trap-trace/adjusted-traptrace-flow.png">
+<img style="width: 80%; display:block; margin-left:auto; margin-right: auto" src="{filename}/images/trap-trace/traptrace-flow.jpg">
 
 Note that instead of having the execution flow between different processes, it
 only switches back and forth between kernel and user mode. So hopefully this is
