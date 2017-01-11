@@ -3,7 +3,7 @@ Slug: 2013-04-13-extract-pdf
 Date: 2013-04-13 18:00:00
 status: published
 
-*This post was moved from a now defunct blog of mine*
+*This post was moved from a now defunct blog of mine (on 2017-01-04)*
 
 When I published my recent
 [visualization of populations near Montreal train stations](http://www.cat-bus.com/2013/04/walksheds-visualizedshowing-populations-near-montreal-rail-stations/),

@@ -1,6 +1,7 @@
 Title: Trapflag-Tracing I:</br>Observing the exeuction of a Program from within itself
 Slug: 2017-01-11-trapflag-tracing
 Date: 2017-01-11 15:30:00
+status: published
 
 *This post explores the use of linux' ptrace functionality to step
  through a complete program execution instruction by instruction, and
