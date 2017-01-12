@@ -1,9 +1,9 @@
-Title: Trapflag-Tracing I:</br>Observing the exeuction of a Program from within itself
+Title: Trapflag-Tracing I:</br>Observing the execution of a Program from within itself
 Slug: 2017-01-11-trapflag-tracing
 Date: 2017-01-11 15:30:00
 status: published
 
-*This post explores the use of linux' ptrace functionality to step
+*This post explores the use of Linux' ptrace functionality to step
  through a complete program execution instruction by instruction, and
  compares it to a much faster hack involving setting the x86 trap-flag
  and signal-handlers, which allows observing the execution of a
