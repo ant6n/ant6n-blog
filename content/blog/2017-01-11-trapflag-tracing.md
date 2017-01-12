@@ -1,5 +1,5 @@
-Title: Trapflag-Tracing I:</br>Observing the execution of a Program from within itself
-Slug: 2017-01-11-trapflag-tracing
+Title: Trapflag-Tracing I:</br>Observing the Execution of a Program from Within Itself
+Slug: trapflag-tracing
 Date: 2017-01-11 15:30:00
 status: published
 
@@ -122,7 +122,7 @@ void loop(unsigned int total_num_instructions) {
 ```
 
 Meanwhile, the debugger has to wait for the signal from the debuggee
-process, and once the wait it's received it can take control via the
+process, and once the signal it's received it can take control via the
 `ptrace` functionality.  In this case, we want to step through the
 program, each time waiting for the next instruction to complete, while
 counting the number of instructions that get executed.
@@ -152,7 +152,7 @@ void run_debugger(pid_t child_pid) {
 ```
 
 It turns out this way of stepping through a program is pretty slow We
-can only execute 16.2 instructions per second, on a 1.6Ghz machine --
+can only execute 16,200 instructions per second, on a 1.6Ghz machine --
 that's a 100,000x slowdown. So a program that would take 1s to execute
 normally will take 28 hours to step through with the debugger. Ouch.
 
@@ -226,7 +226,7 @@ void clearTrapFlag() {
 }
 ```
 
-In order to start and trop tracing a program, we'll register the signal
+In order to start and stop tracing a program, we'll register the signal
 handler, and set/reset the trap flag. The stop tracing functions will also
 print out how many instructions were executed.
 
