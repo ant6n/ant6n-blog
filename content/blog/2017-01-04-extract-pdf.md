@@ -1,5 +1,5 @@
 Title: Extracting Location Data from Vector pdf Maps with Inkscape/Svg/Python/Xpath
-Slug: 2013-04-13-extract-pdf
+Slug: extract-pdf
 Date: 2013-04-13 18:00:00
 status: published
 
