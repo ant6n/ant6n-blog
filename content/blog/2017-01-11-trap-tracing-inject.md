@@ -1,6 +1,7 @@
-Title: Trapflag-Tracing II: Injecting Trapflag-Tracing into Compiled Programs
+Title: Trapflag-Tracing II:</br>Injecting Trapflag-Tracing into Compiled Programs
 Slug: 2017-01-11-trap-tracing-inject
-Date: 2017-01-11 19:37:49
+Date: 2017-02-23 18:00:00
+status: published
 
 *This post continues the exploration of using the x86 trap flag
  and signal handlers to observe the execution of a program; this time
@@ -8,7 +9,8 @@ Date: 2017-01-11 19:37:49
  This includes an overview of LD_PRELOAD.*
 
 
-In my [last post]() I introduced the idea of observing every step of
+In my [last post]({filename}/blog/2017-01-11-trapflag-tracing.md)
+I introduced the idea of observing every step of
 the execution of a program by setting the x86 trap flag which causes
 an interrupt after every instruction, and a signal handler to catch
 that interrupt within the same process. This turns out to be much
@@ -69,7 +71,7 @@ We can figure out which dynamic functions are called using `nm -D`:
 ```
 
 Apparently the program uses `puts` to write the output on screen.
-Let's override it to print something else.
+We can write a tiny shared library to override it:
 
 ```
 #include <unistd.h>
@@ -120,10 +122,11 @@ To compile, we now need to tell gcc to include `libdl` via `-ldl`.
 Using LD_PRELOAD to inject trap-flag tracing
 ============================================
 
-Back to our problem at hand -- how are going to inject trap-flag tracing
-into an already compiled program. The trivial program I was using
-last time was one that merely executes a million instructions and
-then quits.
+Back to our problem at hand -- how are going to inject trap-flag
+tracing into an already compiled program? The trivial program I was
+using in the [last post]()({filename}/blog/2017-01-11-trapflag-tracing.md)
+was one that merely executes a million
+instructions and then quits.
 
 ```c
 void main() {
@@ -140,9 +143,10 @@ void main() {
 ```
 
 If we want to use `LD_PRELOAD` to inject the tracer, we have to find
-some dynamic library function this program is calling. And it should be
-as early in the program as possible. In the program we don't make any
-explicit calls, but may there's some setup code? Let's just check what
+some dynamic library function this program is calling. And it should
+be as early in the program as possible, and should be ideally called
+by any program. In our example program we don't make any explicit
+library calls, but may there's still some setup code? Let's just check what
 the program uses using `nm -D`:
 
 ```
@@ -156,7 +160,7 @@ This `__libc_start_main` function seems like an interesting candidate!
 
 Some poking around the [source code of libc](http://ftp.gnu.org/gnu/libc/)
 (find your version using `ldd --version`) revealed that this is
-actually the function that calls the `main`. So this function
+actually the function that calls `main`! So this function
 will start executing even before `main`.
 
 This means we could intercept `__libc_start_main`, start the tracer by
@@ -169,26 +173,83 @@ call `libc` dynamically, i.e. they are not statically compiled).
 Our overridden `__lib_start_main` looks like this:
 
 ```c
+// declare type of __libc_start_main function
+typedef int (*MainFnType)(int (*main)(int, char **, char **),
+                          int argc,
+                          char **argv,
+                          int (*init)(void),
+                          void (*fini)(void),
+                          void (*ldso_fini)(void),
+                          void (*stack_end));
 
+// override __libc_start_main
+int __libc_start_main(int (*main)(int, char **, char **),
+                      int argc,
+                      char **argv,
+                      int (*init)(void),
+                      void (*fini)(void),
+                      void (*ldso_fini)(void),
+                      void (*stack_end)) {
+  // get original function
+  MainFnType orig_main = (MainFnType)dlsym(RTLD_NEXT,
+                                           "__libc_start_main");
+  
+  // start tracing
+  startTrace();
+  
+  // call original function
+  int result = orig_main(main, argc, argv,
+                         init, fini, ldso_fini, stack_end);
+  return result;
+}
 ```
 
 The start/stop trace functions are the same as for the previous
 post:
 
 ```c
+static struct sigaction trapSa;
+void startTrace() {
+  // set up trap signal handler
+  trapSa.sa_flags = SA_SIGINFO;
+  trapSa.sa_sigaction = trapHandler;
+  sigaction(SIGTRAP, &trapSa, NULL);
+    
+  setTrapFlag();
+}
 
+void stopTrace() {
+  clearTrapFlag();
+  printf("cycles: %lld\n", ccycle);
+}
+
+void setTrapFlag() {
+  asm volatile("pushfl\n" // push status register to stack
+               "orl $0x100, (%esp)\n" // set trap-flag of on-stack value 
+               "popfl\n" // pop status register
+               );
+}
+
+void clearTrapFlag() {
+  asm volatile("pushfl\n" // push status register
+               "andl $0xfffffeff, (%esp)\n" // clear trap-flag
+               "popfl\n" // pop status register
+               );
+}
 ```
 
-We'll use a simple bash script to run the trap-tracer:
-
-```sh
-
-```
+In the actual code, I added some trickery catching the exit
+system call in order to find when the program finishes. I'll
+explain how this works in the next post. For now let's just
+assume we can catch the exit of the program, and execute
+the an exit handler. Again we will only count the cycles,
+and print how many cycles executed at the end of the program.
 
 Now, if we run this on our trivial loop example, we get this:
 
 ```
-
+>> LD_PRELOAD=./override.so loop
+  intercepted sys exit. cycles:0x000f499c
 ```
 
 And it works!
@@ -197,17 +258,31 @@ Now we can trace compiled programs.
 Let's try tracing some other simple programs:
 
 ```
-/bin/echo
+>> LD_PRELOAD=./override.so /bin/echo hello world
+  hello world
+  /bin/echo: write error
+  intercepted sys exit. cycles:0x0003a70c
 
-/bin/ls
-
+>> LD_PRELOAD=./override.so /bin/ls
+  LICENSE  override.c   README.md  tracer.h
+  make.sh  override.so  tracer.c
+  /bin/ls: write error
+  intercepted sys exit. cycles:0x0003878f
 ```
 
 (Note that we're explicitly calling the programs, because `echo`
 by itself may be dealt with directly by the shell)
 
-So now we have a way to step through an arbitrary compiled program,
-assuming that is based on the `libc` library. At a next step, we can
-try to collect some more useful information about programs.
+This defintely works, although I'd prefer not to have those
+write errors.
+
+But overall, now we have a way to step through an arbitrary compiled
+program, assuming that is based on the `libc` library. At a next step,
+we can figure out how exactly I intercepted those exits, and actually
+collect some useful information about the execution of the program.
+
+*See the [source code at the current
+ commit](https://github.com/ant6n/traptrace/tree/b120f054c666d51ef9049513932bd36c8b853fbf)
+ on github.*
 
 
