@@ -1,5 +1,5 @@
 Title: Trapflag-Tracing II:</br>Injecting Trapflag-Tracing into Compiled Programs
-Slug: 2017-01-11-trap-tracing-inject
+Slug: trap-tracing-inject
 Date: 2017-02-23 18:00:00
 status: published
 
